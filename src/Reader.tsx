@@ -6,7 +6,7 @@ import { PageCache } from './pageCache';
 import { openSource } from './pages';
 import { percentOf } from './progress';
 import { PagedView, type Nav } from './PagedView';
-import { updateSettings, useSettings, type Direction, type Fit, type Mode, type Theme } from './settings';
+import { updateSettings, useSettings, type Direction, type Fit, type Mode } from './settings';
 import { WebtoonView } from './WebtoonView';
 
 function Choice<T extends string>({ label, value, options, onChange }: {
@@ -17,7 +17,7 @@ function Choice<T extends string>({ label, value, options, onChange }: {
       <span>{label}</span>
       <div>
         {options.map(([v, text]) => (
-          <button key={v} class={`chunky small${v === value ? ' on' : ''}`} onClick={() => onChange(v)}>{text}</button>
+          <button key={v} class={`chip${v === value ? ' on' : ''}`} onClick={() => onChange(v)}>{text}</button>
         ))}
       </div>
     </div>
@@ -134,19 +134,19 @@ export function Reader({ id, onClose }: { id: string; onClose: () => void }) {
       {menu && (
         <>
           <div class="topbar">
-            <button class="chunky" onClick={onClose}>← กลับ</button>
+            <button class="ibtn" aria-label="กลับ" onClick={onClose}>←</button>
             <span class="grow">{book.title}</span>
-            <button class="chunky" aria-label={marked ? 'ลบบุ๊กมาร์ก' : 'เพิ่มบุ๊กมาร์ก'} onClick={toggleBookmark}>{marked ? '★' : '☆'}</button>
-            <button class="chunky" aria-label="รายการบุ๊กมาร์ก" onClick={() => toggleSheet('marks')}>🔖{marks.length || ''}</button>
-            <button class="chunky" aria-label="ตั้งค่า" onClick={() => toggleSheet('settings')}>⚙</button>
+            <button class={`ibtn${marked ? ' lit' : ''}`} aria-label={marked ? 'ลบบุ๊กมาร์ก' : 'เพิ่มบุ๊กมาร์ก'} onClick={toggleBookmark}>{marked ? '★' : '☆'}</button>
+            <button class="ibtn" aria-label="รายการบุ๊กมาร์ก" onClick={() => toggleSheet('marks')}>☰{marks.length ? <sup>{marks.length}</sup> : ''}</button>
+            <button class="ibtn" aria-label="ตั้งค่า" onClick={() => toggleSheet('settings')}>⚙</button>
           </div>
           {sheet === 'marks' && (
             <div class="sheet">
               {!marks.length && <p>ยังไม่มีบุ๊กมาร์ก — แตะ ☆ เพื่อเก็บหน้านี้</p>}
               {marks.map((p) => (
                 <div class="mark" key={p}>
-                  <button class="chunky grow" onClick={() => { seek(p); setSheet(''); }}>หน้า {p + 1}</button>
-                  <button class="chunky small" aria-label={`ลบบุ๊กมาร์กหน้า ${p + 1}`} onClick={() => dropBookmark(p)}>✕</button>
+                  <button class="chip grow" onClick={() => { seek(p); setSheet(''); }}>หน้า {p + 1}</button>
+                  <button class="ibtn" aria-label={`ลบบุ๊กมาร์กหน้า ${p + 1}`} onClick={() => dropBookmark(p)}>✕</button>
                 </div>
               ))}
             </div>
@@ -167,16 +167,14 @@ export function Reader({ id, onClose }: { id: string; onClose: () => void }) {
                 <Choice<'on' | 'off'> label="ปกอยู่หน้าเดียว" value={settings.coverAlone ? 'on' : 'off'}
                   onChange={(v) => updateSettings({ coverAlone: v === 'on' })} options={[['on', 'เปิด'], ['off', 'ปิด']]} />
               )}
-              <Choice<Theme> label="ธีม" value={settings.theme} onChange={(theme) => updateSettings({ theme })}
-                options={[['system', 'ระบบ'], ['light', 'สว่าง'], ['dark', 'มืด']]} />
             </div>
           )}
           <div class="bottombar">
-            <button class="chunky" onClick={() => (rtl ? nav.current?.next() : nav.current?.prev())}>‹</button>
+            <button class="ibtn" aria-label="หน้าซ้าย" onClick={() => (rtl ? nav.current?.next() : nav.current?.prev())}>‹</button>
             <input type="range" min={0} max={book.pageCount - 1} value={page} dir={rtl ? 'rtl' : 'ltr'}
               onInput={(e) => seek(Number((e.target as HTMLInputElement).value))} />
             <span class="pos">{page + 1}/{book.pageCount} หน้า · {percentOf(page + 1, book.pageCount)}%</span>
-            <button class="chunky" onClick={() => (rtl ? nav.current?.prev() : nav.current?.next())}>›</button>
+            <button class="ibtn" aria-label="หน้าขวา" onClick={() => (rtl ? nav.current?.prev() : nav.current?.next())}>›</button>
           </div>
         </>
       )}

@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
-import { deleteBook, listBooks, setCollection, type Book } from './db';
+import {
+  deleteBook, listBooks, listCollectionCovers, renameCollection, setCollection, setCollectionCover, type Book,
+} from './db';
 import { importFiles, ImportError } from './importer';
 import { dismissInstallHint, needsInstallHint } from './installHint';
+import { Menu } from './Menu';
+import { makeCover } from './pages';
 import { pagesRead, percentOf, progressLabel, statsOf } from './progress';
-import { updateSettings, useSettings, type Theme } from './settings';
-
-const THEME_NEXT: Record<Theme, Theme> = { system: 'light', light: 'dark', dark: 'system' };
-const THEME_ICON: Record<Theme, string> = { system: '🌓', light: '☀', dark: '🌙' };
 
 const naturalTitle = (a: string, b: string) => a.localeCompare(b, undefined, { numeric: true });
 const byTitle = (a: Book, b: Book) => naturalTitle(a.title, b.title);
@@ -40,15 +40,18 @@ export function Library({ onOpen }: { onOpen: (id: string) => void }) {
   const [busy, setBusy] = useState('');
   const [error, setError] = useState('');
   const [usage, setUsage] = useState('');
+  const [covers, setCovers] = useState<Map<string, Blob>>(new Map());
   const input = useRef<HTMLInputElement>(null);
-  const settings = useSettings();
+  const coverInput = useRef<HTMLInputElement>(null);
   const abort = useRef<AbortController | undefined>(undefined);
   const [hint, setHint] = useState(needsInstallHint);
 
   const setView = (v: string | null) => { lastView = v; setViewState(v); };
 
   const refresh = async () => {
-    setBooks(await listBooks());
+    const [list, customCovers] = await Promise.all([listBooks(), listCollectionCovers()]);
+    setBooks(list);
+    setCovers(new Map(customCovers.map((c) => [c.name, c.cover])));
     setLoaded(true);
     const est = await navigator.storage?.estimate?.();
     if (est?.usage != null) setUsage(`${(est.usage / 1048576).toFixed(0)} MB ที่ใช้`);
@@ -135,10 +138,37 @@ export function Library({ onOpen }: { onOpen: (id: string) => void }) {
   const renameView = async () => {
     const name = prompt('ชื่อคอลเลคชั่นใหม่', view ?? '')?.trim();
     if (!name || name === view) return;
-    await setCollection(books.filter((b) => b.collection === view).map((b) => b.id), name);
+    await renameCollection(view!, name);
     // Update books and view together: with the old name gone, a render in between would reset the view.
-    setBooks(await listBooks());
+    const [list, customCovers] = await Promise.all([listBooks(), listCollectionCovers()]);
+    setBooks(list);
+    setCovers(new Map(customCovers.map((c) => [c.name, c.cover])));
     setView(name);
+  };
+
+  const pickCover = async (e: Event) => {
+    const el = e.target as HTMLInputElement;
+    const file = el.files?.[0];
+    el.value = '';
+    if (!file || !view) return;
+    try {
+      await setCollectionCover(view, await makeCover(file));
+      await refresh();
+    } catch {
+      setError('ใช้รูปนี้เป็นปกไม่ได้ ลองเลือกไฟล์รูปอื่น');
+    }
+  };
+
+  const clearCover = async () => {
+    if (!view) return;
+    await setCollectionCover(view, undefined);
+    await refresh();
+  };
+
+  const moveToCollection = (b: Book) => {
+    setSelecting(true);
+    setSelected(new Set([b.id]));
+    setNaming(true);
   };
 
   const anyInCollection = books.some((b) => selected.has(b.id) && b.collection);
@@ -152,9 +182,6 @@ export function Library({ onOpen }: { onOpen: (id: string) => void }) {
         </button>
         <button class={`chunky${selecting ? ' on' : ''}`} onClick={() => (selecting ? exitSelect() : setSelecting(true))}>
           {selecting ? 'เสร็จ' : 'เลือก'}
-        </button>
-        <button class="chunky" aria-label="ธีม" onClick={() => updateSettings({ theme: THEME_NEXT[settings.theme] })}>
-          {THEME_ICON[settings.theme]}
         </button>
         <button class="chunky primary" disabled={!!busy} onClick={() => input.current?.click()}>＋ นำเข้า</button>
         {/* No `accept`: iOS can't map .cbz to a file type and greys those files out; importFiles checks names itself. */}
@@ -176,14 +203,19 @@ export function Library({ onOpen }: { onOpen: (id: string) => void }) {
         <div class="crumb">
           <button class="chunky small" onClick={() => setView(null)}>← ทั้งหมด</button>
           <strong class="grow">{view}</strong>
-          <button class="chunky small" onClick={renameView}>เปลี่ยนชื่อ</button>
+          <Menu label="ตัวเลือกคอลเลคชั่น" items={[
+            { label: 'เปลี่ยนชื่อ', onClick: renameView },
+            { label: 'ตั้งรูปปก', onClick: () => coverInput.current?.click() },
+            ...(covers.has(view) ? [{ label: 'ใช้ปกจากเล่มแรก', onClick: clearCover }] : []),
+          ]} />
+          <input ref={coverInput} type="file" accept="image/*" hidden onChange={pickCover} />
         </div>
       )}
       {loaded && !books.length && !busy && <p class="status">ยังไม่มีหนังสือ — แตะ “นำเข้า” เพื่อเลือกไฟล์ CBZ, PDF หรือรูปภาพ</p>}
       <div class="grid">
         {tiles.map((t) => {
           const key = t.kind === 'book' ? t.book.id : `c:${t.name}`;
-          const cover = t.kind === 'book' ? t.book.cover : t.books[0].cover;
+          const cover = t.kind === 'book' ? t.book.cover : covers.get(t.name) ?? t.books[0].cover;
           const stats = t.kind === 'book' ? { read: pagesRead(t.book), total: t.book.pageCount } : statsOf(t.books);
           const title = t.kind === 'book' ? t.book.title : t.name;
           const sel = selecting && isSelected(t);
@@ -197,13 +229,18 @@ export function Library({ onOpen }: { onOpen: (id: string) => void }) {
                 <Cover blob={cover} />
                 {t.kind === 'collection' && <span class="badge">{t.books.length} เล่ม</span>}
                 {selecting && <span class="check">{sel ? '✓' : ''}</span>}
-                <span class="bar"><i style={{ width: `${percentOf(stats.read, stats.total)}%` }} /></span>
               </button>
               <div class="meta">
                 <span class="title">{title}</span>
                 {!selecting && t.kind === 'book' && (
-                  <button class="chunky small" aria-label="ลบ" onClick={() => remove(t.book)}>🗑</button>
+                  <Menu label={`ตัวเลือก ${title}`} items={[
+                    { label: 'จัดเข้าคอลเลคชั่น', onClick: () => moveToCollection(t.book) },
+                    { label: 'ลบ', danger: true, onClick: () => remove(t.book) },
+                  ]} />
                 )}
+              </div>
+              <div class="pbar" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={percentOf(stats.read, stats.total)}>
+                <i style={{ width: `${percentOf(stats.read, stats.total)}%` }} />
               </div>
               <div class="sub">
                 {progressLabel(stats.read, stats.total)}

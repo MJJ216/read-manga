@@ -12,5 +12,5 @@ export function statsOf(books: Book[]) {
 }
 
 export function progressLabel(read: number, total: number) {
-  return read ? `อ่านแล้ว ${read}/${total} หน้า · ${percentOf(read, total)}%` : `ยังไม่ได้อ่าน · ${total} หน้า`;
+  return read ? `อ่านแล้ว ${read}/${total} หน้า` : `ยังไม่ได้อ่าน · ${total} หน้า`;
 }
