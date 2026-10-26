@@ -86,7 +86,8 @@ export function Library({ onOpen }: { onOpen: (id: string) => void }) {
           {THEME_ICON[settings.theme]}
         </button>
         <button class="chunky primary" disabled={!!busy} onClick={() => input.current?.click()}>＋ นำเข้า</button>
-        <input ref={input} type="file" hidden multiple accept=".cbz,.zip,.pdf,application/pdf,image/*" onChange={onPick} />
+        {/* No `accept`: iOS can't map .cbz to a file type and greys those files out; importFiles checks names itself. */}
+        <input ref={input} type="file" hidden multiple onChange={onPick} />
       </header>
       {hint && (
         <p class="status hint">
