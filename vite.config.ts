@@ -11,8 +11,8 @@ export default defineConfig({
       registerType: 'prompt',
       includeAssets: ['apple-touch-icon.png'],
       manifest: {
-        name: 'Chunky Comic Reader',
-        short_name: 'Comics',
+        name: 'Read Manga',
+        short_name: 'Read Manga',
         display: 'standalone',
         background_color: '#111111',
         theme_color: '#111111',
