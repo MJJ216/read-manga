@@ -5,11 +5,29 @@
 html, body { margin:0; background:var(--bg); color:var(--fg); font:16px system-ui, sans-serif; overscroll-behavior:none; }
 .chunky { min-height:52px; padding:0 18px; font-size:1.05rem; font-weight:700; color:var(--fg); background:var(--card);
   border:3px solid var(--fg); border-radius:14px; }
+.chunky { white-space:nowrap; }
 .chunky.primary { background:var(--accent); color:#111; border-color:#111; }
 .chunky.small { min-height:44px; padding:0 12px; }
 .library { padding:env(safe-area-inset-top) 16px 24px; }
 .library header { display:flex; gap:10px; padding:12px 0; position:sticky; top:0; background:var(--bg); z-index:1; }
-.library header input[type=search] { flex:1; min-width:0; }
+.library { padding-bottom:120px; }
+.library header { flex-wrap:wrap; }
+.library header input[type=search] { flex:1 1 140px; min-width:0; }
+.chunky.on { background:var(--accent); color:#111; border-color:#111; }
+.crumb { display:flex; align-items:center; gap:10px; padding:4px 0 12px; }
+.card.stack .cover { box-shadow:6px 6px 0 -2px var(--card), 6px 6px 0 0 var(--fg); }
+.badge { position:absolute; top:8px; right:8px; padding:2px 10px; border-radius:10px; background:var(--accent); color:#111; font-weight:700; border:2px solid #111; }
+.check { position:absolute; top:8px; left:8px; width:34px; height:34px; border-radius:50%; background:rgba(0,0,0,.55); border:3px solid #fff; color:#fff;
+  display:flex; align-items:center; justify-content:center; font-weight:700; }
+.cover.selected { outline:5px solid var(--accent); outline-offset:-5px; }
+.cover.selected .check { background:var(--accent); color:#111; border-color:#111; }
+.sub { font-size:.85rem; opacity:.7; margin-top:2px; }
+.selbar { position:fixed; left:0; right:0; bottom:0; display:flex; align-items:center; gap:10px; padding:12px 16px calc(12px + env(safe-area-inset-bottom));
+  background:var(--bg); border-top:3px solid var(--fg); z-index:3; flex-wrap:wrap; }
+.naming { width:100%; display:flex; flex-direction:column; gap:10px; }
+.naming form { display:flex; gap:10px; }
+.naming form input { flex:1; min-width:0; }
+.chips { display:flex; flex-wrap:wrap; gap:8px; }
 .grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:16px; }
 .cover { position:relative; display:block; width:100%; aspect-ratio:2/3; padding:0; border:3px solid var(--fg);
   border-radius:12px; overflow:hidden; background:var(--card); }
@@ -36,6 +54,8 @@ footer { margin-top:24px; opacity:.6; text-align:center; }
 .sheet { position:absolute; left:0; right:0; top:calc(76px + env(safe-area-inset-top)); padding:12px 16px; background:rgba(0,0,0,.92);
   display:flex; flex-direction:column; gap:12px; max-height:60dvh; overflow-y:auto; }
 .mark { display:flex; gap:8px; }
+.bottombar .pos { font-size:.85rem; white-space:nowrap; text-align:center; line-height:1.2; }
+.bottombar .chunky { padding:0 14px; }
 .hint { display:flex; align-items:center; gap:10px; background:var(--card); border:3px solid var(--fg); border-radius:14px; padding:10px 14px; }
 .choice > span { display:block; margin-bottom:6px; opacity:.8; }
 .choice > div { display:flex; flex-wrap:wrap; gap:8px; }

@@ -4,6 +4,7 @@ import {
 } from './db';
 import { PageCache } from './pageCache';
 import { openSource } from './pages';
+import { percentOf } from './progress';
 import { PagedView, type Nav } from './PagedView';
 import { updateSettings, useSettings, type Direction, type Fit, type Mode, type Theme } from './settings';
 import { WebtoonView } from './WebtoonView';
@@ -133,7 +134,7 @@ export function Reader({ id, onClose }: { id: string; onClose: () => void }) {
       {menu && (
         <>
           <div class="topbar">
-            <button class="chunky" onClick={onClose}>← ห้องสมุด</button>
+            <button class="chunky" onClick={onClose}>← กลับ</button>
             <span class="grow">{book.title}</span>
             <button class="chunky" aria-label={marked ? 'ลบบุ๊กมาร์ก' : 'เพิ่มบุ๊กมาร์ก'} onClick={toggleBookmark}>{marked ? '★' : '☆'}</button>
             <button class="chunky" aria-label="รายการบุ๊กมาร์ก" onClick={() => toggleSheet('marks')}>🔖{marks.length || ''}</button>
@@ -174,7 +175,7 @@ export function Reader({ id, onClose }: { id: string; onClose: () => void }) {
             <button class="chunky" onClick={() => (rtl ? nav.current?.next() : nav.current?.prev())}>‹</button>
             <input type="range" min={0} max={book.pageCount - 1} value={page} dir={rtl ? 'rtl' : 'ltr'}
               onInput={(e) => seek(Number((e.target as HTMLInputElement).value))} />
-            <span>{page + 1}/{book.pageCount}</span>
+            <span class="pos">{page + 1}/{book.pageCount} หน้า · {percentOf(page + 1, book.pageCount)}%</span>
             <button class="chunky" onClick={() => (rtl ? nav.current?.prev() : nav.current?.next())}>›</button>
           </div>
         </>

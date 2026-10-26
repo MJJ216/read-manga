@@ -13,6 +13,8 @@ export interface Book {
   addedAt: number;
   lastReadAt: number;
   lastPage: number;
+  /** Name of the collection this book is grouped under; absent = not in a collection. */
+  collection?: string;
   /** Per-book overrides; absent means "use the defaults from settings". */
   readingMode?: 'single' | 'double' | 'webtoon';
   direction?: 'ltr' | 'rtl';
@@ -67,6 +69,18 @@ async function patchBook(id: string, patch: (b: Book) => Partial<Book>) {
 export const updateProgress = (id: string, lastPage: number) => patchBook(id, () => ({ lastPage, lastReadAt: Date.now() }));
 
 export const updateBookPrefs = (id: string, prefs: Pick<Book, 'readingMode' | 'direction'>) => patchBook(id, () => prefs);
+
+/** Put books into the named collection, or take them out of any collection when `name` is undefined. */
+export async function setCollection(ids: string[], name: string | undefined) {
+  const tx = (await dbp).transaction('books', 'readwrite');
+  for (const id of ids) {
+    const book = await tx.store.get(id);
+    if (!book) continue;
+    const { collection: _old, ...rest } = book;
+    await tx.store.put(name ? { ...rest, collection: name } : rest);
+  }
+  await tx.done;
+}
 
 export async function deleteBook(id: string) {
   const tx = (await dbp).transaction(['books', 'data', 'bookmarks'], 'readwrite');
